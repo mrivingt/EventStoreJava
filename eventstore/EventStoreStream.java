@@ -1,58 +1,33 @@
-
-
-
-
-import java.net.HttpURLConnection;
-//import java.net.MalformedURLException;
-import java.net.URL;
+package eventstore;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-abstract class Defaults {
-
-	public static final String server = "127.0.0.1";
-	public static final String port = "2113";
-	public static final String stream = "/streams/account-11";
-	public static final String user = "admin";
-	public static final String password = "changeit";
-	public static final int sleeptime = 5000; // milliseconds
-	public static final String embed = "";
-	public static final String mimetype = "application/json";
-	public static final String url = "http://" + server + ":" + port + stream + embed;
-	public static final int idleDotsPerLine = 80;
-}
-
-class MyAuthenticator extends Authenticator {
-
-    public PasswordAuthentication getPasswordAuthentication () {
-        return new PasswordAuthentication (Defaults.user, Defaults.password.toCharArray());
-    }
-}
-		
-public class eventStore {
+public class EventStoreStream {
 	
-	private class EventStoreStream {
+	
 		
 		private String stream;
 		private JSONObject payload;
 		private boolean result;
 		private String previous;
 		private String data;
+		private String mimetype;
 		
-		EventStoreStream (String stream) throws IOException {
+		public EventStoreStream (String stream) throws IOException {
 			this.stream = stream;
+			this.mimetype = "application/json";
 			
 		}
 		
-		void getHeadofStream () throws IOException {
+		public void getHeadofStream () throws IOException {
 			// Start at the head of the stream
 		
 			this.payload = extract(getURL(stream));
@@ -67,25 +42,25 @@ public class eventStore {
 			
 		}
 		
-		boolean dataExists() {
+		public boolean dataExists() {
 			if (!this.data.equals("")) {return true;}
 			else {return false;}
 		}
 		
-		String getData() {
+		public String getData() {
 			return this.data;
 		}
 		
-		void gotoPrevious() throws IOException {
+		public void gotoPrevious() throws IOException {
 			this.previous = getLink(this.payload,"previous");
 			this.payload = extract(getURL(this.previous));
 		}
 		
-		String getPrevious() {
+		public String getPrevious() {
 			return this.previous;
 		}
 		
-		void extractDataFromPayload() {
+		public void extractDataFromPayload() {
 			this.data = getTheData(this.payload);
 		}
 		
@@ -125,7 +100,7 @@ public class eventStore {
 			}
 			return responseData;
 		}
-		private boolean getResult() {
+		public boolean getResult() {
 			return this.result;
 		}
 		
@@ -152,14 +127,14 @@ public class eventStore {
 			HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
 			con.setRequestMethod("GET");
 			//con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-			con.setRequestProperty("Accept" , Defaults.mimetype );
+			con.setRequestProperty("Accept" , this.mimetype );
 			 
 			responseCode = con.getResponseCode();
 			//System.out.print("\nGET response code: " + responseCode);
 
 			if (responseCode != 200) {
-				if (responseCode == 406) {System.out.print("\nhttp response 406: unacceptable content type specified: " + Defaults.mimetype);}
-				if (responseCode == 404) {System.out.print("\nhttp response 404: unable to locate stream: " + Defaults.stream);}
+				if (responseCode == 406) {System.out.print("\nhttp response 406: unacceptable content type specified: " + this.mimetype);}
+				if (responseCode == 404) {System.out.print("\nhttp response 404: unable to locate stream: " + url);}
 				System.exit(responseCode);  
 			}
 
@@ -191,58 +166,3 @@ public class eventStore {
 
 		
 	}
-	
-	public static void main(String[] args) throws Exception {
-
-	// Start at the head of the stream
-	System.out.print("\nStarting point: " + Defaults.url);
-	
-	eventStore myEventStore = new eventStore();	
-	EventStoreStream myEventStream = myEventStore.new EventStoreStream(Defaults.url);
-	
-	myEventStream.getHeadofStream(); // payload is now set
-	if (!myEventStream.getResult()) {
-		System.out.print("\nGet Head of Stream failed");
-		System.exit(1);
-	}
-	myEventStream.extractDataFromPayload();
-	if (myEventStream.dataExists()) {
-		System.out.print(myEventStream.getData());
-	}
-	
-	int idleCount = 0;
-	
-	do {
-		myEventStream.gotoPrevious();
-		String newLine = "\n";
-		
-		do {
-			myEventStream.extractDataFromPayload();
-			if (myEventStream.dataExists()) {
-				System.out.print(myEventStream.getData());
-			}
-			else {
-				
-				if ((idleCount % Defaults.idleDotsPerLine) == 0) {newLine = "\n";}
-				System.out.print(newLine + ".");
-				idleCount++;
-				newLine = "";
-		
-				Thread.sleep(Defaults.sleeptime);}
-			
-		} while (!myEventStream.dataExists());
-		
-		
-	} while (!myEventStream.getPrevious().equals(""));
-	
-	System.exit(0);
-
-   }	
-	
-	
-
-
-}
-
-
-
