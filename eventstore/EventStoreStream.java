@@ -51,9 +51,8 @@ public class EventStoreStream {
 			return this.data;
 		}
 		
-		public void gotoPrevious() throws IOException {
-			this.previous = getLink(this.payload,"previous");
-			this.payload = extract(getURL(this.previous));
+		public void gotoPrevious(String previous) throws IOException {
+				this.payload = extract(getURL(previous));
 		}
 		
 		public String getPrevious() {
@@ -104,7 +103,7 @@ public class EventStoreStream {
 			return this.result;
 		}
 		
-		private String getLink(JSONObject payload, String linkType) {
+		public String getLink(JSONObject payload, String linkType) {
 			
 			JSONArray links = (JSONArray) payload.get("links");
 			String responseURI = "";
@@ -118,7 +117,7 @@ public class EventStoreStream {
 			return responseURI;
 		}
 		
-		private String getURL(String url) throws IOException {	
+		public String getURL(String url) throws IOException {	
 			
 			//System.out.print("\nGoing to get: " + url);
 			int responseCode = 0;
@@ -150,7 +149,7 @@ public class EventStoreStream {
 		  	return response;
 			}
 		
-		private JSONObject extract(String response) {
+		public JSONObject extract(String response) {
 	        JSONParser parser = new JSONParser();
 	        JSONObject payload = null;
 
@@ -162,6 +161,11 @@ public class EventStoreStream {
 	            System.exit(4);
 	        }
 	        return payload;
+		}
+
+		public JSONObject getPayLoad() {
+			
+			return this.payload;
 		}
 
 		

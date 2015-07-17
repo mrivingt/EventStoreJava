@@ -45,11 +45,15 @@ public class eventStore {
 	
 	int idleCount = 0;
 	
+	String previous = "";
 	do {
-		myEventStream.gotoPrevious();
+	
+		previous = myEventStream.getLink(myEventStream.getPayLoad(),"previous");
+		
 		String newLine = "\n";
 		
 		do {
+			myEventStream.gotoPrevious(previous);
 			myEventStream.extractDataFromPayload();
 			if (myEventStream.dataExists()) {
 				System.out.print(myEventStream.getData());
@@ -60,13 +64,13 @@ public class eventStore {
 				System.out.print(newLine + ".");
 				idleCount++;
 				newLine = "";
-		
-				Thread.sleep(Defaults.sleeptime);}
+				Thread.sleep(Defaults.sleeptime);
+				}
 			
 		} while (!myEventStream.dataExists());
 		
 		
-	} while (!myEventStream.getPrevious().equals(""));
+	} while (!previous.equals(""));
 	
  }	
 	
