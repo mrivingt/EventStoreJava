@@ -8,7 +8,7 @@ abstract class Defaults {
 
 	public static final String server = "127.0.0.1";
 	public static final String port = "2113";
-	public static final String stream = "/streams/account-11";
+	public static final String stream = "/streams/account-32";
 	public static final String user = "admin";
 	public static final String password = "changeit";
 	public static final int sleeptime = 5000; // milliseconds
@@ -36,6 +36,7 @@ public class eventStore {
 	myEventStream.getHeadofStream(); // payload is now set
 	if (!myEventStream.getResult()) {
 		System.out.print("\nGet Head of Stream failed");
+		System.out.print("\n" + myEventStream.getErrorMessage());
 		System.exit(1);
 	}
 	myEventStream.extractDataFromPayload();
@@ -48,7 +49,7 @@ public class eventStore {
 	String previous = "";
 	do {
 	
-		previous = myEventStream.getLink(myEventStream.getPayLoad(),"previous");
+		previous = myEventStream.getPrevious();
 		
 		String newLine = "\n";
 		
@@ -73,9 +74,6 @@ public class eventStore {
 	} while (!previous.equals(""));
 	
  }	
-	
-	
-
 
 }
 

@@ -17,8 +17,8 @@ public class EventStoreStream {
 		private String stream;
 		private JSONObject payload;
 		private boolean result;
-		private String previous;
 		private String data;
+		private String error;
 		private String mimetype;
 		
 		public EventStoreStream (String stream) throws IOException {
@@ -31,15 +31,34 @@ public class EventStoreStream {
 			// Start at the head of the stream
 		
 			this.payload = extract(getURL(stream));
-
-			if (payload.get("headOfStream").equals(true)) {
-				String last = getLink(payload,"last");
-					if (!last.equals("")) { 
-					this.payload = extract(getURL(last));
+			
+			if (payload.containsKey("headOfStream")) {
+			
+				if (payload.get("headOfStream").equals(true)) {
+					String last = getLink(payload,"last");
+						if (!last.equals("")) { 
+							this.payload = extract(getURL(last));
+							result = true;
+						}
+						else {
+						result = false;
+						error = stream + " - unable to locate last uri";
+						}
+				}
+				else {
+					result = false;
+					error = stream + " - is not head of stream";
 				}
 			}
-			result = true;
-			
+			else {
+				result = false;
+				error = stream + " - is not head of stream";
+		
+			}
+		}
+		
+		public String getErrorMessage() {
+		 return this.error;
 		}
 		
 		public boolean dataExists() {
@@ -56,7 +75,7 @@ public class EventStoreStream {
 		}
 		
 		public String getPrevious() {
-			return this.previous;
+			return getLink(this.getPayLoad(),"previous");
 		}
 		
 		public void extractDataFromPayload() {
@@ -103,7 +122,7 @@ public class EventStoreStream {
 			return this.result;
 		}
 		
-		public String getLink(JSONObject payload, String linkType) {
+		private String getLink(JSONObject payload, String linkType) {
 			
 			JSONArray links = (JSONArray) payload.get("links");
 			String responseURI = "";
@@ -117,7 +136,7 @@ public class EventStoreStream {
 			return responseURI;
 		}
 		
-		public String getURL(String url) throws IOException {	
+		private String getURL(String url) throws IOException {	
 			
 			//System.out.print("\nGoing to get: " + url);
 			int responseCode = 0;
@@ -149,7 +168,7 @@ public class EventStoreStream {
 		  	return response;
 			}
 		
-		public JSONObject extract(String response) {
+		private JSONObject extract(String response) {
 	        JSONParser parser = new JSONParser();
 	        JSONObject payload = null;
 
