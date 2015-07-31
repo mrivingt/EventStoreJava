@@ -1,9 +1,11 @@
 package eventstore;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.UUID;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -12,19 +14,45 @@ import org.json.simple.parser.ParseException;
 
 public class EventStoreStream {
 	
-	
-		
 		private String stream;
 		private JSONObject payload;
 		private boolean result;
 		private String data;
 		private String error;
 		private String mimetype;
+		private HttpURLConnection con;
+	    private DataOutputStream wr;
 		
 		public EventStoreStream (String stream) throws IOException {
 			this.stream = stream;
 			this.mimetype = "application/json";
-			
+		}
+		
+		public void writeToStream(String url, String eventType, JSONObject payload) throws IOException{
+	
+			UUID eventId = java.util.UUID.randomUUID();
+			URL urlTarget = new URL(url);
+	  		
+	  		con = (HttpURLConnection) urlTarget.openConnection();
+	  		con.setRequestMethod("POST");         
+	  		con.setRequestProperty("ES-EventType",eventType);
+	  		con.setRequestProperty("ES-EventId",eventId.toString());
+	  		con.setRequestProperty("Content-Type" , "application/json" );
+	  		con.setDoOutput(true);
+
+		    String urlParameters = payload.toString();
+		    //System.out.print("\n" + urlParameters);
+		    
+		    wr = new DataOutputStream(con.getOutputStream());
+	  		int responseCode;
+	
+	  		// Send post request
+	  		 wr.writeBytes(urlParameters);
+	  		 wr.flush();
+	  	
+	  		 responseCode = con.getResponseCode();
+	
+			//System.out.print("\n Response code for write: " + responseCode );
 		}
 		
 		public void getHeadofStream () throws IOException {
@@ -41,8 +69,7 @@ public class EventStoreStream {
 							result = true;
 						}
 						else {
-						result = false;
-						error = stream + " - unable to locate last uri";
+							result = true;  // This one is the last one
 						}
 				}
 				else {
@@ -94,7 +121,6 @@ public class EventStoreStream {
 			if (entries.size() == 0) {responseData = "";}
 			else {
 				for (int i=entries.size()-1;i>-1;i--) {
-					//	for (int i=0;i<entries.size();i++) {
 					JSONObject entry = (JSONObject) entries.get(i);
 					//System.out.println(entry.toString());
 					JSONArray entryLinks = (JSONArray) entry.get("links");

@@ -2,13 +2,14 @@ package eventstore;
 import java.net.Authenticator;
 
 import java.net.PasswordAuthentication;
-
+import org.json.simple.JSONObject;
 
 abstract class Defaults {
 
 	public static final String server = "127.0.0.1";
 	public static final String port = "2113";
-	public static final String stream = "/streams/account-32";
+	//public static final String stream = "/streams/account-32";
+	public static final String stream = "/streams/markStream3";
 	public static final String user = "admin";
 	public static final String password = "changeit";
 	public static final int sleeptime = 5000; // milliseconds
@@ -28,10 +29,26 @@ public class eventStore {
 	
 	public static void main(String[] args) throws Exception {
 
+		
 	// Start at the head of the stream
 	System.out.print("\nStarting point: " + Defaults.url);
 
 	EventStoreStream myEventStream = new EventStoreStream(Defaults.url);
+	
+	// Let's write to the stream before we read it
+	
+	JSONObject testPayload = new JSONObject();
+	
+	long then = System.currentTimeMillis();
+	for (int i = 0;i < 10; i++) {
+		long now = System.currentTimeMillis();
+		testPayload.put( "time", String.valueOf(now));
+		testPayload.put( "value", now-then);
+		testPayload.put("source", "DellXPS");
+		myEventStream.writeToStream(Defaults.url, "mark", testPayload);
+		then = now;
+	}
+	
 	
 	myEventStream.getHeadofStream(); // payload is now set
 	if (!myEventStream.getResult()) {
